@@ -1,0 +1,199 @@
+#include <IRremote.h>
+#include <Arduino.h>
+#define room 9
+#define fan 8
+#define small 7
+#define extra 6
+#define error_light 2
+
+const int buttonPin = 4;
+
+// IRrecv IrReceiver(3); // IR receiver on pin 3
+decode_results results;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(buttonPin, INPUT);
+  pinMode(room, OUTPUT);
+  pinMode(fan, OUTPUT);
+  pinMode(small, OUTPUT);
+  pinMode(extra, OUTPUT);
+  pinMode(error_light, OUTPUT);
+  // IrReceiver.enableIRIn(); // Start the IR receiver
+  IrReceiver.begin(3, LED_BUILTIN);
+  delay(800);
+}
+
+void loop() {
+  int buttonState = digitalRead(buttonPin);
+  
+  if (buttonState == HIGH) {
+    IR_input();
+  } 
+  if(buttonState == LOW)
+  {
+    fire_base_code();
+  }
+}
+
+void fire_base_code() {
+  if (Serial.available() >= 4) {
+    char receivedChars[5];
+    
+    for (int i = 0; i < 4; ++i) {
+      receivedChars[i] = Serial.read();
+    }
+    receivedChars[4] = '\0';
+    
+    Serial.println("Received: ");
+    Serial.println(receivedChars);
+    
+    if (strcmp(receivedChars, "0000") == 0) {
+        // Turn OFF all appliances
+        digitalWrite(room, LOW);
+        digitalWrite(fan, LOW);
+        digitalWrite(small, LOW);
+        digitalWrite(extra, LOW);
+    } else if (strcmp(receivedChars, "0001") == 0) {
+        // Turn ON only 'extra', turn OFF others
+        digitalWrite(room, LOW);
+        digitalWrite(fan, LOW);
+        digitalWrite(small, LOW);
+        digitalWrite(extra, HIGH);
+    } else if (strcmp(receivedChars, "0010") == 0) {
+        // Turn ON only 'small', turn OFF others
+        digitalWrite(room, LOW);
+        digitalWrite(fan, LOW);
+        digitalWrite(small, HIGH);
+        digitalWrite(extra, LOW);
+    } else if (strcmp(receivedChars, "0011") == 0) {
+        // Turn ON 'small' and 'extra', turn OFF others
+        digitalWrite(room, LOW);
+        digitalWrite(fan, LOW);
+        digitalWrite(small, HIGH);
+        digitalWrite(extra, HIGH);
+    } else if (strcmp(receivedChars, "0100") == 0) {
+        // Turn ON only 'fan', turn OFF others
+        digitalWrite(room, LOW);
+        digitalWrite(fan, HIGH);
+        digitalWrite(small, LOW);
+        digitalWrite(extra, LOW);
+    } else if (strcmp(receivedChars, "0101") == 0) {
+        // Turn ON 'fan' and 'extra', turn OFF others
+        digitalWrite(room, LOW);
+        digitalWrite(fan, HIGH);
+        digitalWrite(small, LOW);
+        digitalWrite(extra, HIGH);
+    } else if (strcmp(receivedChars, "0110") == 0) {
+        // Turn ON 'fan' and 'small', turn OFF others
+        digitalWrite(room, LOW);
+        digitalWrite(fan, HIGH);
+        digitalWrite(small, HIGH);
+        digitalWrite(extra, LOW);
+    } else if (strcmp(receivedChars, "0111") == 0) {
+        // Turn ON 'fan', 'small', and 'extra', turn OFF 'room'
+        digitalWrite(room, LOW);
+        digitalWrite(fan, HIGH);
+        digitalWrite(small, HIGH);
+        digitalWrite(extra, HIGH);
+    } else if (strcmp(receivedChars, "1000") == 0) {
+        // Turn ON only 'room', turn OFF others
+        digitalWrite(room, HIGH);
+        digitalWrite(fan, LOW);
+        digitalWrite(small, LOW);
+        digitalWrite(extra, LOW);
+    } else if (strcmp(receivedChars, "1001") == 0) {
+        // Turn ON 'room' and 'extra', turn OFF others
+        digitalWrite(room, HIGH);
+        digitalWrite(fan, LOW);
+        digitalWrite(small, LOW);
+        digitalWrite(extra, HIGH);
+    } else if (strcmp(receivedChars, "1010") == 0) {
+        // Turn ON 'room' and 'small', turn OFF others
+        digitalWrite(room, HIGH);
+        digitalWrite(fan, LOW);
+        digitalWrite(small, HIGH);
+        digitalWrite(extra, LOW);
+    } else if (strcmp(receivedChars, "1011") == 0) {
+        // Turn ON 'room', 'small', and 'extra', turn OFF 'fan'
+        digitalWrite(room, HIGH);
+        digitalWrite(fan, LOW);
+        digitalWrite(small, HIGH);
+        digitalWrite(extra, HIGH);
+    } else if (strcmp(receivedChars, "1100") == 0) {
+        // Turn ON 'room' and 'fan', turn OFF others
+        digitalWrite(room, HIGH);
+        digitalWrite(fan, HIGH);
+        digitalWrite(small, LOW);
+        digitalWrite(extra, LOW);
+    } else if (strcmp(receivedChars, "1101") == 0) {
+        // Turn ON 'room', 'fan', and 'extra', turn OFF 'small'
+        digitalWrite(room, HIGH);
+        digitalWrite(fan, HIGH);
+        digitalWrite(small, LOW);
+        digitalWrite(extra, HIGH);
+    } else if (strcmp(receivedChars, "1110") == 0) {
+        // Turn ON 'room', 'fan', and 'small', turn OFF 'extra'
+        digitalWrite(room, HIGH);
+        digitalWrite(fan, HIGH);
+        digitalWrite(small, HIGH);
+        digitalWrite(extra, LOW);
+    } else if (strcmp(receivedChars, "1111") == 0) {
+        // Turn ON all appliances
+        digitalWrite(room, HIGH);
+        digitalWrite(fan, HIGH);
+        digitalWrite(small, HIGH);
+        digitalWrite(extra, HIGH);
+    }
+    else if (strcmp(receivedChars, "errr") == 0) {
+        // Turn ON all appliances
+        digitalWrite(error_light, HIGH);
+    }
+    else if (strcmp(receivedChars, "\n") == 0) {
+        // Turn ON all appliances
+        digitalWrite(error_light, HIGH);
+    }
+
+    while (Serial.available() > 0) {
+      Serial.read();
+    }
+  }
+}
+
+void IR_input() {
+  if (IrReceiver.decode()) {
+    // Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX); // Display the received hex value
+    
+    if (IrReceiver.decodedIRData.decodedRawData == 0xED127F80) {
+      digitalWrite(room, HIGH); // Light ON
+    } else if (IrReceiver.decodedIRData.decodedRawData == 0xE11E7F80) {
+      digitalWrite(room, LOW); // Light OFF
+    } else if (IrReceiver.decodedIRData.decodedRawData == 0xFE017F80) {
+      digitalWrite(fan, HIGH); // Fan ON
+    } else if (IrReceiver.decodedIRData.decodedRawData == 0xFC037F80) {
+      digitalWrite(fan, LOW); // Fan OFF
+    } else if (IrReceiver.decodedIRData.decodedRawData == 0xFB047F80) {
+      digitalWrite(small, HIGH); // Small Light ON
+    } else if (IrReceiver.decodedIRData.decodedRawData == 0xF9067F80) {
+      digitalWrite(small, LOW); // Small Light OFF
+    } else if (IrReceiver.decodedIRData.decodedRawData == 0xF8077F80) {
+      digitalWrite(extra, HIGH); // Extra ON
+    } else if (IrReceiver.decodedIRData.decodedRawData == 0xF6097F80) {
+      digitalWrite(extra, LOW); // Extra OFF
+    } else if (IrReceiver.decodedIRData.decodedRawData == 0xFF007F80) {
+      // Turn ON all appliances
+      digitalWrite(room, HIGH);
+      digitalWrite(fan, HIGH);
+      digitalWrite(small, HIGH);
+      digitalWrite(extra, HIGH);
+    } else if (IrReceiver.decodedIRData.decodedRawData == 0xE6197F80) {
+      // Turn OFF all appliances
+      digitalWrite(room, LOW);
+      digitalWrite(fan, LOW);
+      digitalWrite(small, LOW);
+      digitalWrite(extra, LOW);
+    }
+    
+    IrReceiver.resume(); // Enable receiving of the next value
+  }
+}
